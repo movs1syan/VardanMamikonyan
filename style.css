@@ -1,0 +1,121 @@
+.config-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.config-container.hidden {
+    display: none;
+}
+
+.game-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.start-again-container {
+    text-align: center;
+}
+
+.field {
+    display: none;
+    width: 600px;
+    height: 600px;
+}
+
+.field.show {
+    display: grid;
+}
+
+.field-cell {
+    background-color: #f0f0f0;
+    border: 1px solid black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero, .elephant {
+    display: none;
+}
+
+.hero.show, .elephant.show {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.title {
+    font-size: 40px;
+    font-weight: bold;
+}
+
+.config {
+    margin-top: 30px;
+}
+
+.field-container, .elephant-container {
+    display: flex;
+    gap: 15px;
+}
+
+.field-title {
+    font-size: 20px;
+    font-family: sans-serif;
+}
+
+.elephant-title {
+    margin-top: 20px;
+    font-size: 20px;
+    font-family: sans-serif;
+}
+
+.field-container input[type="radio"], .elephant-container input[type="radio"] {
+    display: none;
+}
+
+.field-container label, .elephant-container label {
+    border: 5px solid dodgerblue;
+    background: dodgerblue;
+    padding: 15px 60px;
+    font-size: 20px;
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-weight: bold;
+    font-family: sans-serif;
+}
+
+.field-container input[type="radio"]:checked + label, .elephant-container input[type="radio"]:checked + label {
+    border: 5px solid darkblue;
+}
+
+.start-again-container {
+    display: none;
+}
+
+.start-again-container.show {
+    display: block;
+}
+
+.start, .start-again {
+    margin-top: 30px;
+    padding: 15px 30px;
+    border: 5px solid darkblue;
+    background-color: dodgerblue;
+    color: white;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: sans-serif;
+}
+
+.start:active, .start-again:active {
+    opacity: 0.7;
+}
