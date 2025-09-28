@@ -1,37 +1,36 @@
 const configContainer = document.getElementById('config-container');
 const configSection = document.getElementById('config');
 const field = document.getElementById('field');
+const fragment = document.createDocumentFragment()
 const startGameButton = document.getElementById('start');
 const startAgainButton = document.getElementById('start-again-container');
 
 let selectedMode = {};
 
-const gameConfig = {
-    // Field's config
-    field: [
-        { rows: 5, columns: 5 },
-        { rows: 6, columns: 6 },
-        { rows: 7, columns: 7 },
-    ].map(item => ({
-        id: `${item.rows} x ${item.columns}`,
-        ...item,
-        label: `${item.rows} x ${item.columns}`,
-    })),
+// Field config
+const fieldConfig = [
+    { rows: 5, columns: 5 },
+    { rows: 6, columns: 6 },
+    { rows: 7, columns: 7 },
+].map(item => ({
+    id: `${item.rows} x ${item.columns}`,
+    ...item,
+    label: `${item.rows} x ${item.columns}`,
+}));
 
-    // Elephants' config
-    elephant: [
-        { quantity: 10 },
-        { quantity: 13 },
-        { quantity: 15 },
-    ].map(item => ({
-        id: `${item.quantity}`,
-        ...item,
-        label: `${item.quantity}`,
-    })),
-}
+// Elephant config
+const elephantConfig = [
+    { quantity: 10 },
+    { quantity: 13 },
+    { quantity: 15 },
+].map(item => ({
+    id: `${item.quantity}`,
+    ...item,
+    label: `${item.quantity}`,
+}));
 
 // Create configuration options
-const createConfigButtons = (config, container, name, key) => {
+const createConfigButtons = (configs, container, key) => {
     // Title of configuration section
     const title = document.createElement("div")
     title.className = `${key}-title`;
@@ -42,11 +41,11 @@ const createConfigButtons = (config, container, name, key) => {
     buttonContainer.className = `${key}-container`;
 
     // Each option of the field or elephant
-    config.forEach(option => {
+    configs.forEach(option => {
         const configButton = document.createElement('input');
         configButton.id = option.id;
         configButton.type = "radio";
-        configButton.name = name;
+        configButton.name = key;
 
         configButton.addEventListener('click', () => {
             selectedMode[key] = option;
@@ -62,8 +61,8 @@ const createConfigButtons = (config, container, name, key) => {
     container.append(title, buttonContainer);
 }
 
-createConfigButtons(gameConfig.field, configSection, "field-group", "field");
-createConfigButtons(gameConfig.elephant, configSection, "elephant-group", "elephant");
+createConfigButtons(fieldConfig, configSection, "field");
+createConfigButtons(elephantConfig, configSection, "elephant");
 
 // Start game after clicking "Start"
 startGameButton.addEventListener("click", () => {
@@ -89,68 +88,75 @@ const startGame = () => {
     let rows = selectedMode.field.rows;
     field.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
     field.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-
-    // Create grid which is a 2D array
-    let grid = [];
-
+    
     //  Generate field
-    for (let i = 1; i <= rows; i++) {
-        grid[i] = [];
-        for (let j = 1; j <= columns; j++) {
-            const cell = document.createElement('div');
-            cell.className = 'field-cell';
-            field.appendChild(cell);
-            grid[i][j] = cell;
+    let grid = Array.from({ length: rows }, () =>
+      Array.from({ length: columns }, () => {
+          const cell = document.createElement("div");
+          cell.className = "field-cell";
+          fragment.appendChild(cell);
+          return cell;
+      })
+    );
+    field.appendChild(fragment);
+    
+    // Recursion-based random coordinate generator
+    const getRandomFreeCoordinate = (rows, columns, heroCoordinates, occupiedCells) => {
+        const x = Math.floor(Math.random() * columns + 1);
+        const y = Math.floor(Math.random() * rows + 1);
+        const key = `${x},${y}`;
+        
+        // Check if coordinate is occupied OR same as hero's coordinate
+        if (occupiedCells.has(key) || (x === heroCoordinates.x && y === heroCoordinates.y)) {
+            return getRandomFreeCoordinate(rows, columns, heroCoordinates, occupiedCells);
         }
-    }
-
+        
+        occupiedCells.add(key);
+        return { x, y };
+    };
+    
+    // Cells that already has elephant or hero
+    const occupiedCells = new Set();
+    
     // Create hero
     const hero = document.createElement("img");
     hero.src = "war.png";
     hero.className = "hero";
     hero.classList.add("show");
 
-    // Hero initial placement
-    const heroCoordinates = {
-        x: Math.floor(Math.random() * rows + 1),
-        y: Math.floor(Math.random() * columns + 1),
-    };
-    grid[heroCoordinates.y][heroCoordinates.x].appendChild(hero);
-
-    // Cells that already has elephant or hero
-    const occupiedCells = new Set();
+    // Hero initial placement using the same recursive function
+    const heroCoordinates = getRandomFreeCoordinate(
+      rows,
+      columns,
+      { x: null, y: null },
+      occupiedCells,
+    );
+    grid[heroCoordinates.y - 1][heroCoordinates.x - 1].appendChild(hero);
 
     // Eaten elephants quantity
     let eatenElephants = 0;
-
+    
+    // Create elephants
     const elephantsQuantity = selectedMode.elephant.quantity;
-    for (let i = 0; i < elephantsQuantity; ) {
-        const x = Math.floor(Math.random() * columns + 1);
-        const y = Math.floor(Math.random() * rows + 1);
-        const key = `${x},${y}`;
-
-        // Check if every next elephant's coordinate is evaluating to previous elephant's or hero's coordinate
-        if (!occupiedCells.has(key) && x !== heroCoordinates.x && y !== heroCoordinates.y) {
-            occupiedCells.add(key);
-
-            // Create elephant
-            const elephant = document.createElement("img");
-            elephant.src = "elephant.png";
-            elephant.className = "elephant";
-            elephant.classList.add("show");
-
-            //Add elephant to new cell
-            grid[y][x].appendChild(elephant);
-            i++;
-        }
+    for (let i = 0; i < elephantsQuantity; i++) {
+        const { x, y } = getRandomFreeCoordinate(rows, columns, heroCoordinates, occupiedCells);
+        
+        // Create elephant
+        const elephant = document.createElement("img");
+        elephant.src = "elephant.png";
+        elephant.className = "elephant";
+        elephant.classList.add("show");
+        
+        // Add elephant to free cell
+        grid[y - 1][x - 1].appendChild(elephant);
     }
 
     // Events that running on each keydown
-    window.addEventListener("keydown", (event) => {
+    window.addEventListener("keyup", (event) => {
         const { x, y } = heroCoordinates;
 
         // Remove hero from current cell
-        grid[y][x].removeChild(hero);
+        grid[y - 1][x - 1].removeChild(hero);
 
         // Update hero's coordinates
         if (event.key === "ArrowRight" && x < columns) {
@@ -164,10 +170,10 @@ const startGame = () => {
         }
 
         // Add hero to new cell
-        grid[heroCoordinates.y][heroCoordinates.x].appendChild(hero);
+        grid[heroCoordinates.y - 1][heroCoordinates.x - 1].appendChild(hero);
 
         // Check if cell on which one comes hero contains elephant
-        const currentElephant = grid[heroCoordinates.y][heroCoordinates.x].querySelector(".elephant")
+        const currentElephant = grid[heroCoordinates.y - 1][heroCoordinates.x - 1].querySelector(".elephant")
         if (currentElephant) {
             currentElephant.remove();
 
@@ -176,7 +182,7 @@ const startGame = () => {
         }
 
         // Check if all elephants are eaten
-        if(eatenElephants === elephantsQuantity) {
+        if (eatenElephants === elephantsQuantity) {
             setTimeout(() => {
                 alert("Success!");
                 startAgainButton.classList.add("show");
@@ -186,7 +192,15 @@ const startGame = () => {
                     startAgainButton.classList.remove("show");
                     field.classList.remove("show");
                     configContainer.classList.remove("hidden");
+                    
+                    // reset game state
                     eatenElephants = 0;
+                    selectedMode = {};
+                    
+                    // uncheck all config buttons
+                    document.querySelectorAll('input[type="radio"]').forEach(input => {
+                        input.checked = false;
+                    });
                 })
             }, 100);
         }
